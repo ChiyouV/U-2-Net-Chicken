@@ -24,6 +24,8 @@ from data_loader import SalObjDataset
 from model import U2NET
 from model import U2NETP
 
+from multiprocessing import Process, freeze_support
+
 # ------- 1. define loss function --------
 
 bce_loss = nn.BCELoss(size_average=True)
@@ -115,50 +117,52 @@ running_tar_loss = 0.0
 ite_num4val = 0
 save_frq = 2000 # save the model every 2000 iterations
 
-for epoch in range(0, epoch_num):
-    net.train()
+if __name__ == '__main__':
+    freeze_support()  # needed for Windows
+    for epoch in range(0, epoch_num):
+        net.train()
 
-    for i, data in enumerate(salobj_dataloader):
-        ite_num = ite_num + 1
-        ite_num4val = ite_num4val + 1
+        for i, data in enumerate(salobj_dataloader):
+            ite_num = ite_num + 1
+            ite_num4val = ite_num4val + 1
 
-        inputs, labels = data['image'], data['label']
+            inputs, labels = data['image'], data['label']
 
-        inputs = inputs.type(torch.FloatTensor)
-        labels = labels.type(torch.FloatTensor)
+            inputs = inputs.type(torch.FloatTensor)
+            labels = labels.type(torch.FloatTensor)
 
-        # wrap them in Variable
-        if torch.cuda.is_available():
-            inputs_v, labels_v = Variable(inputs.cuda(), requires_grad=False), Variable(labels.cuda(),
-                                                                                        requires_grad=False)
-        else:
-            inputs_v, labels_v = Variable(inputs, requires_grad=False), Variable(labels, requires_grad=False)
+            # wrap them in Variable
+            if torch.cuda.is_available():
+                inputs_v, labels_v = Variable(inputs.cuda(), requires_grad=False), Variable(labels.cuda(),
+                                                                                            requires_grad=False)
+            else:
+                inputs_v, labels_v = Variable(inputs, requires_grad=False), Variable(labels, requires_grad=False)
 
-        # y zero the parameter gradients
-        optimizer.zero_grad()
+            # y zero the parameter gradients
+            optimizer.zero_grad()
 
-        # forward + backward + optimize
-        d0, d1, d2, d3, d4, d5, d6 = net(inputs_v)
-        loss2, loss = muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, labels_v)
+            # forward + backward + optimize
+            d0, d1, d2, d3, d4, d5, d6 = net(inputs_v)
+            loss2, loss = muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, labels_v)
 
-        loss.backward()
-        optimizer.step()
+            loss.backward()
+            optimizer.step()
 
-        # # print statistics
-        running_loss += loss.data.item()
-        running_tar_loss += loss2.data.item()
+            # # print statistics
+            running_loss += loss.data.item()
+            running_tar_loss += loss2.data.item()
 
-        # del temporary outputs and loss
-        del d0, d1, d2, d3, d4, d5, d6, loss2, loss
+            # del temporary outputs and loss
+            del d0, d1, d2, d3, d4, d5, d6, loss2, loss
 
-        print("[epoch: %3d/%3d, batch: %5d/%5d, ite: %d] train loss: %3f, tar: %3f " % (
-        epoch + 1, epoch_num, (i + 1) * batch_size_train, train_num, ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
+            print("[epoch: %3d/%3d, batch: %5d/%5d, ite: %d] train loss: %3f, tar: %3f " % (
+            epoch + 1, epoch_num, (i + 1) * batch_size_train, train_num, ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
 
-        if ite_num % save_frq == 0:
+            if ite_num % save_frq == 0:
 
-            torch.save(net.state_dict(), model_dir + model_name+"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
-            running_loss = 0.0
-            running_tar_loss = 0.0
-            net.train()  # resume train
-            ite_num4val = 0
+                torch.save(net.state_dict(), model_dir + model_name+"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
+                running_loss = 0.0
+                running_tar_loss = 0.0
+                net.train()  # resume train
+                ite_num4val = 0
 
