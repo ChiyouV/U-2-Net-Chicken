@@ -48,7 +48,7 @@ def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, labels_v):
 
 # ------- 2. set the directory of training dataset --------
 
-model_name = 'u2net' #'u2netp'
+model_name = 'u2netp' #'u2netp'
 
 data_dir = os.path.join(os.getcwd(), 'train_data' + os.sep)
 tra_image_dir = os.path.join('DUTS', 'DUTS-TR', 'im_aug' + os.sep)
@@ -118,7 +118,7 @@ ite_num4val = 0
 save_frq = 2000 # save the model every 2000 iterations
 
 if __name__ == '__main__':
-    freeze_support()  # needed for Windows
+    freeze_support()  # needed for windows
     for epoch in range(0, epoch_num):
         net.train()
 
