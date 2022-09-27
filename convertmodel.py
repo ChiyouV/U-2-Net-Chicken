@@ -4,7 +4,7 @@ import torch.onnx
 from model import U2NET
 
 torch_model = U2NET(3,1)
-model_path = "<pathToStateDict>.pth"
+model_path = r"C:\Users\chiyo\Desktop\Model for Rembg\U-2-Net-Chicken\saved_models\u2net\u2net.pth"
 batch_size = 1
 
 torch_model.load_state_dict(torch.load(model_path))
